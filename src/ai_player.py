@@ -1,6 +1,14 @@
 from tetris_engine import TetrisGame
 import random
 
+# Mutation stats
+BASE_MUTATION_RATE = 0.1
+BASE_MUTATION_STEP = 2.0
+
+# Height penalty
+HEIGHT_PENALTY_TOGGLE = True
+HEIGHT_PENALTY_EXPONENT = 2.5
+
 class BoardEvaluator: 
     def get_score(self, board, weights): 
         # calculates final score based on the weighted sum of heuristics
@@ -19,12 +27,23 @@ class BoardEvaluator:
         bumpiness = self.calculate_bumpiness(heights)
         lines = self.count_completed_lines(board)
         
-        # multiply by weights and sum it
+        # extra penalties
+        height_penalty = 0
+        if HEIGHT_PENALTY_TOGGLE: 
+            height_penalty = self._calculate_exponential_height_penalty(heights)
+        
+        
+        # move score
         score = 0
+        
+        # multiply raw stats by weights and sum it
         score += agg_height * weights.get("height", 0)
         score += holes      * weights.get("holes", 0)
         score += bumpiness  * weights.get("bumpiness", 0)
         score += lines      * weights.get("lines", 0)
+        
+        # score penalties
+        score -= height_penalty
         
         return score
     
@@ -72,6 +91,16 @@ class BoardEvaluator:
             if board[y][x] != 0:
                 return height - y
         return 0
+    
+    def _calculate_exponential_height_penalty(self, heights): 
+        total_penalty = 0
+        exponent = HEIGHT_PENALTY_EXPONENT
+        
+        for height in heights: 
+            total_penalty += (height ** exponent)
+            
+        return total_penalty
+            
                 
 
 # currently drop-only, there's no tucking/sliding yet
@@ -166,7 +195,7 @@ def crossover(parent1_weights, parent2_weights):
             child_weights[key] = parent2_weights[key]
     return child_weights
 
-def mutate(weights, mutation_rate=0.1, mutation_step = 2.0): 
+def mutate(weights, mutation_rate=BASE_MUTATION_RATE, mutation_step = BASE_MUTATION_STEP): 
     mutated_weights = weights.copy() 
     
     for key in mutated_weights: 

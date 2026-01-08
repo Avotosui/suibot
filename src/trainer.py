@@ -3,6 +3,7 @@ from ai_player import GeneticPlayer, generate_random_genome, crossover, mutate
 import json
 import random
 import os
+import datetime
 
 
 # training hyperparameters
@@ -40,6 +41,8 @@ def playGame(weights):
 
 def main(): 
     global MOVES_LIMIT
+    
+    start_time = datetime.datetime.now() 
     
     print("generating population...")
     population = [generate_random_genome() for _ in range(POPULATION_SIZE)]
@@ -125,7 +128,7 @@ def main():
     
     # saving the best player
     if os.path.exists("best_brain.json"):
-        print("loading past AI brain from file...")
+        print("Loading past AI brain from file...")
         with open("best_brain.json", "r") as r:
             old_champion = json.load(r)
             if(old_champion[0] < best_player_score): 
@@ -137,11 +140,13 @@ def main():
                 print("The older player was better...")
                 print("Nothing saved to best_brain.json")
     else:
-        print("no AI brain loaded before...")
-        print("adding new AI brain")
+        print("No AI brain loaded before...")
+        print("Adding new AI brain")
         with open('best_brain.json', 'w') as w: 
             json.dump((best_player_score, best_player_weights), w)
         print("Saved to best_brain.json")
+        
+    print(f"Training Time Elapsed: {datetime.datetime.now() - start_time}")
     
         
 

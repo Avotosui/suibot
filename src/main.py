@@ -5,6 +5,8 @@ from tetris_engine import TetrisGame
 from ai_player import GeneticPlayer
 import json
 
+GAMES_TO_RUN = 36
+
 def print_board(game):
     # clear the screen (cls for windows, clear for mac/linux)
     os.system('cls' if os.name == 'nt' else 'clear')
@@ -23,10 +25,7 @@ def print_board(game):
     print("+" + "-" * (game.width * 2) + "+")
 
 def main():
-    # create game
-    game = TetrisGame()
-    
-    # loading brain (from train.py)
+    # loading brain (from trainer.py)
     if os.path.exists("best_brain.json"):
         print("loading AI brain from file...")
         with open("best_brain.json", "r") as f:
@@ -48,36 +47,41 @@ def main():
         
     player = GeneticPlayer(weights)
     
-    print("playing...")
+    # play the game(s)
     
-    total_moves = 0
-    start_time = datetime.datetime.now()
-    
-    # game loop
-    while not game.game_over:
-        # ask the AI for the best move, which returns (column, rotation)
-        move = player.get_best_move(game)
+    for i in range(GAMES_TO_RUN): 
+        game = TetrisGame()
+        # print("playing...")
         
-        # if AI returns None, it means no moves are possible (Game Over)
-        if not move:
-            print("AI gave up (No moves possible)")
-            break
+        total_moves = 0
+        start_time = datetime.datetime.now()
+        
+        # game loop
+        while not game.game_over:
+            # ask the AI for the best move, which returns (column, rotation)
+            move = player.get_best_move(game)
             
-        col, rot = move
-        
-        # stats
-        total_moves += 1
-        
-        # executes moves
-        reward = game.step(col, rot)
-        
-        # print board + time between frames (uncomment if you want to see it actually play)
-        # print_board(game)
-        # time.sleep(0.01)
+            # if AI returns None, it means no moves are possible
+            if not move:
+                print("AI gave up (No moves possible)")
+                break
+                
+            col, rot = move
+            
+            # stats
+            total_moves += 1
+            
+            # executes moves
+            reward = game.step(col, rot)
+            
+            # print board + time between frames (uncomment if you want to see it actually play)
+            # print_board(game)
+            # time.sleep(0.1)
 
-    print(f"Final Score: {game.score}")
-    print(f"Total Moves: {total_moves}")
-    print(f"Time Elapsed: {datetime.datetime.now() - start_time}")
+        # print(f"Final Score: {game.score}")
+        print(f"{game.score}")
+        # print(f"Total Moves: {total_moves}")
+        # print(f"Time Elapsed: {datetime.datetime.now() - start_time}")
 
 if __name__ == "__main__":
     main()
