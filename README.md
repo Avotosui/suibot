@@ -1,26 +1,43 @@
 # Genetic Algorithm Tetris AI (Tetris Demon)
-Open-source implementation of a headless Tetris engine and heuristic-based AI player, with a genetic algorithm framework for evolving evaluation weights. 
 
-# Features & Architecture
-- Headless Engine: A lightweight, non-graphical Tetris simulation optimized for high-speed training cycles.
-- Heuristic Evaluation: Current AI decision-making utilizes hand-tuned weights for aggregate height, bumpiness, and hole density.
-- Placement Control System: The AI currently outputs target coordinates and rotation states, abstracting the micro-movement inputs. 
+This is a headless Tetris engine with an AI player that uses a genetic algorithm to tune its heuristic weights. It’s mainly a personal project for learning more about game AI and genetic algorithms.
 
-# Roadmap/Goals
-1. Genetic Algorithm Integration: Implement evolutionary strategies to automate weight optimization (replacing current hand-tuned values).
-2. SRS Implementation: Integrate the Super Rotation System (SRS) standard into the headless engine for tournament-accurate mechanics.
-3. Input Translation Layer: Build a move interpreter to translate abstract AI "placement" decisions into specific keyboard inputs (Left, Right, CW, CCW).
-4. Computer Vision Interface: Develop a screen reader to allow the AI to interface with external Tetris clients. 
+## Project Features
 
-# Getting Started
-Prerequisites: Python 3.x
+- Headless Tetris engine  
+  A non-graphical Tetris simulator that runs fast and makes it easier to test ideas without worrying about rendering.
 
-# Usage
-Run main.py to initialize the headless environment and visualize the current heuristic player's performance. 
+- Heuristic-Based AI  
+  The AI decides where to place pieces using simple board features like height, bumpiness, holes, and lines cleared. Each feature has a weight that affects how good a move looks.
 
-# Contributing
-This is a personal research project focused on reinforcement learning and genetic algorithms. Feedback is welcome; please open an issue or contact me directly. 
+- Genetic Algorithm  
+  A genetic algorithm is used to automatically adjust those heuristic weights based on how well the AI performs, instead of tuning them by hand.
 
-# Contact
-Maintainer: @Avotosui
+- Placement-Based cControl  
+  The AI picks a rotation and x-position, instead of using movement keys, and the engine places the piece there. 
+
+## Future plans
+
+- Add SRS support  
+  Implement the Super Rotation System so rotations behave more like modern Tetris.
+
+- Translate placements into real inputs  
+  Convert the AI’s placement decisions into actual keyboard inputs like left, right, rotate, and drop.
+
+- Play on external Tetris clients  
+  Use basic computer vision so the AI can read the screen and play games outside of the built-in engine.
+
+## Getting started
+
+**Requirements:** Python 3.x
+
+Run `main.py` to see the current AI play in the headless engine.
+
+## Notes
+
+This project is mostly for experimentation and learning. The code is still evolving, and a lot of things can definitely be improved.
+
+## Contact
+
+Maintainer: @Avotosui  
 Email: avotosui@gmail.com
