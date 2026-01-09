@@ -7,7 +7,7 @@ BASE_MUTATION_STEP = 2.0
 
 # Height penalty
 HEIGHT_PENALTY_TOGGLE = True
-HEIGHT_PENALTY_EXPONENT = 2.5
+HEIGHT_PENALTY_EXPONENT = 2.5 # subtracts
 
 class BoardEvaluator: 
     def get_score(self, board, weights): 
@@ -31,7 +31,7 @@ class BoardEvaluator:
         height_penalty = 0
         if HEIGHT_PENALTY_TOGGLE: 
             height_penalty = self._calculate_exponential_height_penalty(heights)
-        
+            
         
         # move score
         score = 0

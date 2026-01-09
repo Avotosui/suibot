@@ -31,11 +31,12 @@ This is a headless Tetris engine with an AI player that uses a genetic algorithm
 
 **Requirements:** Python 3.x
 
-Run `main.py` to see the current AI play in the headless engine.
+Run `main.py` to see the current AI play in the headless engine. 
+Run `trainer.py` if you wish to train your own genetic AI player (will override best_brain.json if it's better). 
 
 ## Notes
 
-This project is mostly for experimentation and learning. The code is still evolving, and a lot of things can definitely be improved.
+This project is mostly for my personal experimentation and learning. The code is still evolving, and a lot of things can definitely be improved.
 
 ## Contact
 
