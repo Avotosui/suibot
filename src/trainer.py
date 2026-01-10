@@ -58,7 +58,7 @@ def main():
     best_player_score = -1
     
     for generation in range(GENERATIONS): 
-        print(f"<------Generation {generation + 1}------>")
+        print(f"<------Generation {generation + 1} out of {GENERATIONS}------>")
         
         max_moves_hit = False
         
@@ -101,7 +101,7 @@ def main():
             best_player_moves = population_results[0][2]
             
         # max moves hit by a player -> extra moves being added (if toggled on)
-        if(max_moves_hit and MOVES_LIMIT_SHIFTING_TOGGLE): 
+        if(max_moves_hit and MOVES_LIMIT_SHIFTING_TOGGLE and MOVES_LIMIT < MOVES_LIMIT_SHIFTING_CAP): 
             print(f"MAX MOVES HIT! Increasing the moves limit by {MOVES_LIMIT_SHIFT_STEP}")
             MOVES_LIMIT += MOVES_LIMIT_SHIFT_STEP
         

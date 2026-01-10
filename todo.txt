@@ -1,3 +1,4 @@
-Research simulated annealing and applications for this? 
-Research Tetrises and SRS and T-Spins (more reward?)
+Research simulated annealing and applications for this? GASA apparently???? 
+Research SRS and T-Spins (more reward?)
 Tucking and stuff if it can work fast enough (or just deal with it)
+- BFS with a piece rotation trait to determine if it fits? Might be really inefficient lmao
