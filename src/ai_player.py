@@ -87,7 +87,10 @@ class BoardEvaluator:
     def calculate_wells(self, heights): 
         # finds if there is a well, rewards only 1 well, any extras are not rewarded now
         
-        for i in range(len(heights)): 
+        candidates = [0, len(heights) - 1]
+        well_count = 0
+        
+        for i in candidates: 
             is_it_a_well = True
             
             # check left
@@ -101,8 +104,12 @@ class BoardEvaluator:
                     is_it_a_well = False
 
             if is_it_a_well: 
-                return 1
-        
+                well_count += 1
+                
+        if well_count == 1: 
+            return 1
+        elif well_count > 1: 
+            return -6
         return 0
     
     def count_completed_lines(self, board): 

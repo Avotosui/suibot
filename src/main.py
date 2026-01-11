@@ -5,8 +5,8 @@ from tetris_engine import TetrisGame
 from ai_player import GeneticPlayer
 import json
 
-STATS_MODE = False # Stats mode makes it output only the final score, useful for statistics
-GAMES_TO_RUN = 1
+STATS_MODE = True # Stats mode makes it output only the final score, useful for statistics
+GAMES_TO_RUN = 35
 
 def print_board(game):
     # clear the screen (cls for windows, clear for mac/linux)
