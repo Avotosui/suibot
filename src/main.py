@@ -9,7 +9,7 @@ STATS_MODE = False # Stats mode makes it output only the final score, useful for
 GAMES_TO_RUN = 1
 
 def print_board(game):
-    # clear the screen (cls for windows, clear for mac/linux)
+    # clear screen
     os.system('cls' if os.name == 'nt' else 'clear')
     
     print(f"Score: {game.score}")
@@ -18,7 +18,7 @@ def print_board(game):
     for row in game.board:
         line = "|"
         for cell in row:
-            # draw [] for blocks and . for empty space
+            # [] = blocks, . = empty space
             line += "[]" if cell else " ."
         line += "|"
         print(line)
