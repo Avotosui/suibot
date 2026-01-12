@@ -10,6 +10,9 @@ HEIGHT_PENALTY_TOGGLE = True
 HEIGHT_PENALTY_EXPONENT = 2.5
 HEIGHT_PENALTY_BONUS = 36 # small reward for staying around 0-5 (more weighted towards 5)
 
+# Extra wells penalty
+EXTRA_WELL_PENALTY = -6
+
 class BoardEvaluator: 
     def get_score(self, board, weights): 
         # calculates final score based on the weighted sum of heuristics
@@ -84,32 +87,31 @@ class BoardEvaluator:
             
         return total_bumpiness
     
-    def calculate_wells(self, heights): 
-        # finds if there is a well, rewards only 1 well, any extras are not rewarded now
+    def calculate_wells(self, heights):
+        side_well_count = 0
+        other_well_count = 0
         
-        candidates = [0, len(heights) - 1]
-        well_count = 0
-        
-        for i in candidates: 
-            is_it_a_well = True
+        # check for number of wells (which is where its at least 4 blocks deeper than neighboring columns)
+        for i in range(len(heights)): 
+            left_height = heights[i - 1] if i > 0 else 20
+            right_height = heights[i + 1] if i < len(heights) - 1 else 20
             
-            # check left
-            if i > 0: 
-                if heights[i - 1] - heights[i] < 4: 
-                    is_it_a_well = False
-            
-            # check right
-            if i < len(heights) - 1: 
-                if heights[i + 1] - heights[i] < 4: 
-                    is_it_a_well = False
+            well_depth = min(left_height, right_height) - heights[i]
 
-            if is_it_a_well: 
-                well_count += 1
-                
-        if well_count == 1: 
+            if well_depth >= 4:
+                if i == 0 or i == len(heights) - 1:
+                    side_well_count += 1
+                else:
+                    other_well_count += 1
+
+        # only one well on the side
+        if side_well_count == 1 and other_well_count == 0:
             return 1
-        elif well_count > 1: 
-            return -6
+        
+        # more than one well, penalizeeeeeeeeeeeeeeee
+        total_wells = side_well_count + other_well_count
+        if total_wells >= 1: 
+            return -1 * total_wells
         return 0
     
     def count_completed_lines(self, board): 

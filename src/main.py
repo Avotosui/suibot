@@ -5,8 +5,8 @@ from tetris_engine import TetrisGame
 from ai_player import GeneticPlayer
 import json
 
-STATS_MODE = True # Stats mode makes it output only the final score, useful for statistics
-GAMES_TO_RUN = 35
+STATS_MODE = False # Stats mode makes it output only the final score, useful for statistics
+GAMES_TO_RUN = 1
 
 def print_board(game):
     # clear the screen (cls for windows, clear for mac/linux)
@@ -27,9 +27,9 @@ def print_board(game):
 
 def main():
     # loading brain (from trainer.py)
-    if os.path.exists("best_brain.json"):
+    if os.path.exists("brains/best_brain.json"):
         print("loading AI brain from file...")
-        with open("best_brain.json", "r") as f:
+        with open("brains/best_brain.json", "r") as f:
             champion = json.load(f)
             weights = champion[1]
             

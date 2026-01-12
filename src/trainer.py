@@ -127,9 +127,9 @@ def main():
         population = next_generation[:]
         
         if(TRAINING_SAVE_TOGGLE and (generation + 1) % TRAINING_SAVE_STEP == 0): 
-            with open(f'latest_brain_gen{generation}.json', 'w') as w: 
+            with open(f'brains/latest_brain_gen{generation}.json', 'w') as w: 
                 json.dump((best_player_score, best_player_weights), w)
-            print(f"Saved to latest_brain_gen{generation}.json")
+            print(f"Saved to brains/latest_brain_gen{generation}.json")
     
     print(f"Training Finished.")
     
@@ -137,24 +137,24 @@ def main():
     best_player_fitness = best_player_score * (1 + best_player_score/best_player_moves)
     
     # saving the best player
-    if os.path.exists("best_brain.json"):
+    if os.path.exists("brains/best_brain.json"):
         print("Loading past AI brain from file...")
-        with open("best_brain.json", "r") as r:
+        with open("brains/best_brain.json", "r") as r:
             old_champion = json.load(r)
             if(old_champion[0] < best_player_score): 
                 print(">>>>>>NEW ALL TIME BEST PLAYER!!!!!!<<<<<<")
-                with open('best_brain.json', 'w') as w: 
+                with open('brains/best_brain.json', 'w') as w: 
                     json.dump((best_player_score, best_player_weights), w)
-                print("Saved to best_brain.json")
+                print("Saved to brains/best_brain.json")
             else: 
                 print("The older player was better...")
-                print("Nothing saved to best_brain.json")
+                print("Nothing saved to brains/best_brain.json")
     else:
         print("No AI brain loaded before...")
         print("Adding new AI brain")
-        with open('best_brain.json', 'w') as w: 
+        with open('brains/best_brain.json', 'w') as w: 
             json.dump((best_player_score, best_player_weights), w)
-        print("Saved to best_brain.json")
+        print("Saved to brains/best_brain.json")
         
     print(f"Training Time Elapsed: {datetime.datetime.now() - start_time}")
     
