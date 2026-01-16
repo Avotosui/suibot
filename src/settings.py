@@ -1,11 +1,25 @@
-# constants
+# Main Player Settings
+
+# Trainer Settings
+
+# Genetic Player Settings
+
+# Tetris Engine Settings
 MATRIX_HEIGHT = 20
 MATRIX_WIDTH = 10
 
-EXTRA_BOARD_WIDTH = 3
-EXTRA_BOARD_HEIGHT = 2
-
 PIECE_PREVIEW_AMOUNT = 3
+LINES_CLEARED_FOR_NEXT_LEVEL = 10
+B2B_MULTIPLIER = 1.5
+COMBO_BONUS = 50
+
+NORMAL_SPAWN_POSITION_X = 3
+NORMAL_SPAWN_POSITION_Y = 0
+
+I_PIECE_SPAWN_POSITION_X = 2
+I_PIECE_SPAWN_POSITION_Y = -2
+
+
 
 # Guideline SRS Shapes
 SHAPES = {

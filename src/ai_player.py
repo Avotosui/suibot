@@ -9,10 +9,6 @@ BASE_MUTATION_STEP = 2.0
 # Height penalty
 HEIGHT_PENALTY_TOGGLE = True
 HEIGHT_PENALTY_EXPONENT = 2.5
-HEIGHT_PENALTY_BONUS = 36 # small reward for staying around 0-5 (more weighted towards 5)
-
-# Extra wells penalty
-EXTRA_WELL_PENALTY = -6
 
 class BoardEvaluator: 
     def get_score(self, board, weights): 

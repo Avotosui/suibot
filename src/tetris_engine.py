@@ -1,222 +1,117 @@
+from settings import MATRIX_HEIGHT, MATRIX_WIDTH, PIECE_PREVIEW_AMOUNT, NORMAL_SPAWN_POSITION_X, NORMAL_SPAWN_POSITION_Y, I_PIECE_SPAWN_POSITION_X, I_PIECE_SPAWN_POSITION_Y, LINES_CLEARED_FOR_NEXT_LEVEL, B2B_MULTIPLIER, COMBO_BONUS, SHAPES, SRS_TABLE
 import random
 from collections import deque
 
-# For debugging
-# random.seed(36)
-
-# constants
-MATRIX_HEIGHT = 20
-MATRIX_WIDTH = 10
-
-PIECE_PREVIEW_AMOUNT = 3
-
-# Guideline SRS Shapes
-SHAPES = {
-    'I': [
-        [0, 0, 0, 0, 0], 
-        [0, 0, 0, 0, 0], 
-        [0, 1, 1, 1, 1], 
-        [0, 0, 0, 0, 0], 
-        [0, 0, 0, 0, 0]
-    ],
-    'O': [
-        [0, 1, 1],
-        [0, 1, 1], 
-        [0, 0, 0]
-    ],
-    'T': [
-        [0, 1, 0],
-        [1, 1, 1],
-        [0, 0, 0]
-    ],
-    'J': [
-        [1, 0, 0], 
-        [1, 1, 1], 
-        [0, 0, 0]
-    ],
-    'L': [
-        [0, 0, 1], 
-        [1, 1, 1], 
-        [0, 0, 0]
-    ],
-    'S': [
-        [0, 1, 1], 
-        [1, 1, 0], 
-        [0, 0, 0]
-    ],
-    'Z': [
-        [1, 1, 0], 
-        [0, 1, 1], 
-        [0, 0, 0]
-    ]
-}
-
-# Tetris Guideline SRS Table (calculated from offsets)
-# SRS[piece_key][original_rotation][final_rotation]
-# 0 = base rotation, 1 = 90 degrees clockwise, 2 = 180 degrees clockwise, 3 = 270 degrees clockwise
-# 0 = 0, 1 = R, 2 = 2, 3 = L (tetris.wiki/Super_Rotation_System)
-SRS = {
-    'I': [
-        [None, [(1,0), (-1,0), (2,0), (-1,1), (2,-2)], None, [(0,1), (-1,1), (2,1), (-1,-1), (2,2)]], 
-        [[(-1,0), (1,0), (-2,0), (1,-1), (-2,2)], None, [(0,1), (-1,1), (2,1), (-1,-1), (2,2)], None], 
-        [None, [(0,-1), (1,-1), (-2,-1), (1,1), (-2,-2)], None, [(-1,0), (1,0), (-2,0), (1,-1), (-2,2)]],  
-        [[(0,-1), (1,-1), (-2,-1), (1,1), (-2,-2)], None, [(1,0), (-1,0), (2,0), (-1,1), (2,-2)], None]
-    ],
-    'O': [
-        [None, [(0,-1)], None, [(1,0)]],
-        [[(0,1)], None, [(1,0)], None],
-        [None, [(-1,0)], None, [(0,1)]],
-        [[(-1,0)], None, [(0,-1)], None],
-    ], 
-    'T': [
-        [None, [(0,0), (-1,0), (-1,-1), (0,2), (-1,2)], None, [(0,0), (1,0), (1,-1), (0,2), (1,2)]], 
-        [[(0,0), (1,0), (1,1), (0,-2), (1,-2)], None, [(0,0), (1,0), (1,1), (0,-2), (1,-2)], None], 
-        [None, [(0,0), (-1,0), (-1,-1), (0,2), (-1,2)], None, [(0,0), (1,0), (1,-1), (0,2), (1,2)]], 
-        [[(0,0), (-1,0), (-1,1), (0,-2), (-1,-2)], None, [(0,0), (-1,0), (-1,1), (0,-2), (-1,-2)], None]
-    ], 
-    'J': [
-        [None, [(0,0), (-1,0), (-1,-1), (0,2), (-1,2)], None, [(0,0), (1,0), (1,-1), (0,2), (1,2)]], 
-        [[(0,0), (1,0), (1,1), (0,-2), (1,-2)], None, [(0,0), (1,0), (1,1), (0,-2), (1,-2)], None], 
-        [None, [(0,0), (-1,0), (-1,-1), (0,2), (-1,2)], None, [(0,0), (1,0), (1,-1), (0,2), (1,2)]], 
-        [[(0,0), (-1,0), (-1,1), (0,-2), (-1,-2)], None, [(0,0), (-1,0), (-1,1), (0,-2), (-1,-2)], None]
-    ], 
-    'L': [
-        [None, [(0,0), (-1,0), (-1,-1), (0,2), (-1,2)], None, [(0,0), (1,0), (1,-1), (0,2), (1,2)]], 
-        [[(0,0), (1,0), (1,1), (0,-2), (1,-2)], None, [(0,0), (1,0), (1,1), (0,-2), (1,-2)], None], 
-        [None, [(0,0), (-1,0), (-1,-1), (0,2), (-1,2)], None, [(0,0), (1,0), (1,-1), (0,2), (1,2)]], 
-        [[(0,0), (-1,0), (-1,1), (0,-2), (-1,-2)], None, [(0,0), (-1,0), (-1,1), (0,-2), (-1,-2)], None]
-    ], 
-    'S': [
-        [None, [(0,0), (-1,0), (-1,-1), (0,2), (-1,2)], None, [(0,0), (1,0), (1,-1), (0,2), (1,2)]], 
-        [[(0,0), (1,0), (1,1), (0,-2), (1,-2)], None, [(0,0), (1,0), (1,1), (0,-2), (1,-2)], None], 
-        [None, [(0,0), (-1,0), (-1,-1), (0,2), (-1,2)], None, [(0,0), (1,0), (1,-1), (0,2), (1,2)]], 
-        [[(0,0), (-1,0), (-1,1), (0,-2), (-1,-2)], None, [(0,0), (-1,0), (-1,1), (0,-2), (-1,-2)], None]
-    ], 
-    'Z': [
-        [None, [(0,0), (-1,0), (-1,-1), (0,2), (-1,2)], None, [(0,0), (1,0), (1,-1), (0,2), (1,2)]], 
-        [[(0,0), (1,0), (1,1), (0,-2), (1,-2)], None, [(0,0), (1,0), (1,1), (0,-2), (1,-2)], None], 
-        [None, [(0,0), (-1,0), (-1,-1), (0,2), (-1,2)], None, [(0,0), (1,0), (1,-1), (0,2), (1,2)]], 
-        [[(0,0), (-1,0), (-1,1), (0,-2), (-1,-2)], None, [(0,0), (-1,0), (-1,1), (0,-2), (-1,-2)], None]
-    ]
-}
 
 class TetrisGame:
-    def __init__(self, height=MATRIX_HEIGHT, width=MATRIX_WIDTH):
-        self.height = height
-        self.width = width
+    def __init__(self):
         self.score = 0
+        self.level = 1 # start at level 1
+        self.lines_cleared = 0
+        
+        self.previous_difficulty = False
+        self.combo = -1
+        
         self.game_over = False
         
-        self.current_piece = None
-        self.current_piece_key = None
-        
-        self.held_piece = None
+        self.cur_piece_key = None
         self.held_piece_key = None
         
-        self.board = [[0] * width for _ in range(height)]
+        self.board = Board()
+        
         self.bag = []
         
-        self.spawn_piece()
-
-    def rotate_piece(self, piece, rotations=1): 
-        # actual rotation
-        result = piece
-        for _ in range(rotations % 4):
-            result = [list(row) for row in zip(*result[::-1])]
-            # kick calculation (only actually does something for I and O pieces)
-            # PLACEHOLDER
-        
-        # CHANGE TO INCLUDE THE KICK OFFSET
-        return result
+        self.spawn_piece() 
     
-    def is_valid_position(self, board, piece, target_x, target_y):
-        # checks if a piece fits at (target_x, target_y) coordinates
-        # returns False if it hits the wall, hits the floor, or intersects with another block
-        for y, row in enumerate(piece):
-            for x, cell in enumerate(row):
-                if cell:  
-                    board_x = target_x + x
-                    board_y = target_y + y
-
-                    # check board boundaries
-                    if board_x < 0 or board_x >= self.width:
-                        return False
-                    if board_y >= self.height:
-                        return False
-
-                    # check overlap with other blocks
-                    if board_y >= 0:
-                        if board[board_y][board_x] == 1:
-                            return False
-        return True
-    
-    def find_kick(self, board, piece_key, original_rotation, final_rotation, x, y): 
-        kicks = SRS[piece_key][original_rotation][final_rotation]
+    def step(self, move_tuple): 
+        # (x, y, r, piece_key, T-spin (if T-piece))
+        # r: 0 = no rotation, 1 = 90 degrees cw, 2 = 180 degrees cw, 3 = 270 degrees cw
+        # T-spin: 0 = no t-spin, 1 = t-spin mini, 2 = t-spin (normal)
         
-        for kick in kicks: 
-            result = None
-            for _ in range(rotations % 4):
-                result = [list(row) for row in zip(*result[::-1])]
-    
-
-    def get_drop_position(self, piece, column, rotation): 
-        # finds the lowest a piece can drop to, given a piece and a x-coordinate
-        drop_y = 0
+        # unpack move data
+        x, y, r, piece_key, T_spin = move_tuple
         
-        # keep moving until the piece hits something
-        while(self.is_valid_position(self.board, piece, column, drop_y + 1)): 
-            drop_y += 1
+        # temporarily save previous move data
+        previous_difficulty = self.previous_difficulty
+        previous_base_points = self.previous_base_points
         
-        return drop_y
-
-    def step(self, column, rotation, swap_hold): 
-        # AI players will call this to change the board to the next state
-        # column = target column for piece ranging from 0-9
-        # rotation = clockwise rotation index (0 = 0 deg, 1 = 90 deg, 2 = 180 deg, 3 = 270 deg)
-        # swap_hold = whether to swap to the held piece
+        # place piece onto board
+        self.board.lock_piece(x, y, r, piece_key)
         
-        if(swap_hold): 
-            self.hold_piece()
+        # clear lines
+        current_lines_cleared = self.board.clear_lines()
         
-        # creates specific rotated piece
-        original_shape = SHAPES[self.current_piece_key] 
-        piece = self.rotate_piece(original_shape, rotation)
+        base_points = 0
+        is_difficult = False
         
-        # check if column is valid
-        # if move is invalid, kill game + reward nothing
-        if not self.is_valid_position(self.board, piece, column, 0):
-             self.game_over = True
-             return 0 # reward 0
-             
-        # calculate drop
-        final_y = self.get_drop_position(piece, column, rotation)
+#       --------------------------STANDARD CLEARS--------------------------
+        if(T_spin == 0): 
+            if(current_lines_cleared == 0): # Nothing
+                pass
+            elif(current_lines_cleared == 1): # Single
+                base_points = 100
+            elif(current_lines_cleared == 2): # Double
+                base_points = 300
+            elif(current_lines_cleared == 3): # Triple
+                base_points = 500
+            elif(current_lines_cleared == 4): # Tetris
+                base_points = 800
+                is_difficult = True
+#       --------------------------T-SPIN MINIS--------------------------
+        elif(T_spin == 1): 
+            if(current_lines_cleared == 0): # T-Spin Mini (No Lines Cleared)
+                base_points = 100
+            elif(current_lines_cleared == 1): # T-Spin Mini Single
+                base_points = 200
+                is_difficult = True
+            elif(current_lines_cleared == 2): # T-Spin Mini Double
+                base_points = 400
+                is_difficult = True
+#       --------------------------T-SPINS--------------------------
+        elif(T_spin == 2): 
+            if(current_lines_cleared == 0): # T-Spin (No Lines Cleared)
+                base_points = 400
+                is_difficult = True
+            elif(current_lines_cleared == 1): # T-Spin Single
+                base_points = 800
+                is_difficult = True
+            elif(current_lines_cleared == 2): # T-Spin Double
+                base_points = 1200
+                is_difficult = True
+            elif(current_lines_cleared == 3): # T-Spin Triple
+                base_points = 1600
+                is_difficult = True
         
-        # lock piece onto board
-        self.lock_piece(piece, column, final_y)
+        move_score = base_points * self.level # score from base and level
         
-        # clear lines and get score
-        lines_cleared = self.clear_lines()
-        if(lines_cleared == 1): 
-            self.score += 40
-        elif(lines_cleared == 2): 
-            self.score += 100
-        elif(lines_cleared == 3): 
-            self.score += 300
-        elif(lines_cleared == 4): 
-            self.score += 1200
+        # combo
+        if(current_lines_cleared > 0):
+            self.combo += 1
+        else:
+            self.combo = -1
+        
+#       --------------------------BONUSES--------------------------
+        # Back-to-Back Bonus (only happens if both current and previous are difficult)
+        if(is_difficult and self.previous_difficulty): 
+            move_score = int(B2B_MULTIPLIER * move_score)
+            self.previous_difficulty = True
+        else: 
+            self.previous_difficulty = False
+        
+        if(self.combo > 0): 
+            move_score += COMBO_BONUS * self.combo * self.level
             
-        # 6. Spawn next piece
+        self.score += move_score
+        
+        # level calculation
+        self.lines_cleared += current_lines_cleared
+        self.level = 1 + (self.lines_cleared // LINES_CLEARED_FOR_NEXT_LEVEL)
+        
+        # spawn next piece
         self.spawn_piece()
         
         return self.score
     
-    def lock_piece(self, piece, x, y): 
-        # iterate over the piece and write 1s into self.board
-        for r, row in enumerate(piece): 
-            for c, val in enumerate(row): 
-                if val:
-                    self.board[y + r][x + c] = 1
-                    
     def spawn_piece(self):
         # refills the bag if it has less than 7 pieces
         if len(self.bag) < 7: 
@@ -225,52 +120,22 @@ class TetrisGame:
             self.bag.extend(new_bag)
             
         # take a random piece out of the bag
-        key = self.bag.pop(0)
-            
-        self.current_piece_key = key
-        self.current_piece = SHAPES[key]
+        self.current_piece_key = self.bag.pop(0)
         
-        # check middle spawn
-        if not self.is_valid_position(self.board, self.current_piece, 3, 0): 
-             self.game_over = True
-             
+    def hold_piece(self): 
+        temp_pk = self.current_piece_key
+        if(self.held_piece_key is None): # first time taking a piece out
+            self.held_piece_key = self.bag.pop(0)
+        
+        # swap (type shiii)
+        self.current_piece_key = self.held_piece_key
+        self.held_piece_key = temp_pk
+        
+    
     def get_piece_preview(self): 
         return self.bag[:PIECE_PREVIEW_AMOUNT]
     
-    def hold_piece(self): 
-        # make placeholder for current piece
-        temp_piece = self.current_piece
-        temp_piece_key = self.current_piece_key
-        
-        # hasn't held a piece in this game yet, need to take out the next piece
-        if(self.held_piece is None): 
-            self.held_piece_key = self.bag.pop(0)
-            self.held_piece = SHAPES[self.held_piece_key]
-        
-        # swap
-        self.current_piece = self.held_piece
-        self.current_piece_key = self.held_piece_key
-        self.held_piece = temp_piece
-        self.held_piece_key = temp_piece_key
-        
-        
-    def clear_lines(self): 
-        # removes completed lines and adds new empty ones on top
-        # returns number of lines cleared
-        
-        # filter out full rows
-        new_board = [row for row in self.board if any(cell == 0 for cell in row)]
-        
-        # calculate how many rows were cleared and add that many to the top
-        lines_cleared = self.height - len(new_board)
-        for _ in range(lines_cleared):
-            new_board.insert(0, [0] * self.width)
-            
-        # update normal board
-        self.board = new_board
-        
-        # return score (currently 1 line = 1 score)
-        return lines_cleared
+    
 
 class Board: 
     def __init__(self, height=MATRIX_HEIGHT, width=MATRIX_WIDTH): 
@@ -278,45 +143,217 @@ class Board:
         self.width = width
         self.board = [[0] * width for _ in range(height)]
         
-    def clear_lines(self): 
-        # removes completed lines and adds new empty ones on top
-        # returns number of lines cleared
+    def lock_piece(self, x, y, rotation, piece_key): 
+        actual_piece = SHAPES[piece_key]
         
-        # filter out full rows
+        # matrix clockwise rotation code found online
+        for i in range(rotation % 4): 
+            actual_piece = [list(row) for row in zip(*actual_piece[::-1])]
+        
+        for r, row in enumerate(actual_piece): 
+            for c, val in enumerate(row): 
+                if val:
+                    self.board[y + r][x + c] = 1
+                    
+    def clear_lines(self): 
+        # clears all rows of only 1s
         new_board = [row for row in self.board if any(cell == 0 for cell in row)]
         
-        # calculate how many rows were cleared and add that many to the top
         lines_cleared = self.height - len(new_board)
-        for _ in range(lines_cleared):
+        for i in range(lines_cleared): 
             new_board.insert(0, [0] * self.width)
             
-        # update normal board
         self.board = new_board
         
-        # return score (currently 1 line = 1 score)
         return lines_cleared
-        
-class Piece: 
-    # anchored in top left corner (x, y)
-    def __init__(self, x, y, rotation, piece_key): 
-        self.x = x
-        self.y = y
-        self.rotation = rotation
-        self.piece_key = piece_key
-    
-    
+
+
 
 class MoveScanner: 
-    def find_all_legal_moves(game): 
+    def get_all_legal_moves(self, board, pk): 
         moves = []
         
+        start_x = NORMAL_SPAWN_POSITION_X
+        start_y = NORMAL_SPAWN_POSITION_Y
+        start_r = 0
+
+        if(pk == 'I'): 
+            start_x = I_PIECE_SPAWN_POSITION_X
+            start_y = I_PIECE_SPAWN_POSITION_Y
+        
+        # BFS setup
         queue = deque()
-        visited = [[False] * (game.width + 3) for _ in range(game.height)][4]
+        last_move_queue = deque()
+        visited = set()
         
+        queue.append((start_x, start_y, start_r))
+        visited.add((start_x, start_y, start_r))
+        last_move_queue.append(None)
         
-        # current piece, x, y, current rotation
-        # queue.append((game.current_piece, skib, 0, 0))
         while(queue): 
-            current_piece_position = queue.pop()
-            # L, R, CW, CCW, drop 1
-            # if drop cannot happen, then add to list of final moves
+            cur_x, cur_y, cur_r = queue.popleft() 
+            last_move = last_move_queue.popleft()
+            
+            directions = [
+                [-1, 0, 0], # left
+                [1, 0, 0], # right
+                [0, 1, 0] # down
+            ]
+            
+            for dx, dy, dr in directions: 
+                new_x, new_y, new_r = cur_x + dx, cur_y + dy, cur_r + dr
+                
+                if((new_x, new_y, new_r) not in visited): 
+                    if(self.is_valid_position(board, new_x, new_y, new_r, pk)): 
+                        visited.add((new_x, new_y, new_r))
+                        queue.append((new_x, new_y, new_r))
+                        if(dx == 0 and dy == 1): 
+                            last_move_queue.append('M') 
+                        else: 
+                            last_move_queue.append('M') # movement (L or R)
+                    elif(dx == 0 and dy == 1): 
+                        if(pk == 'T'): # special thing for T-spins
+                            if(last_move == 'LR'): 
+                                T_spin = self.check_t_spin(board, cur_x, cur_y, cur_r, pk)
+                                if(T_spin >= 1): 
+                                    moves.append((cur_x, cur_y, cur_r, pk, 2)) # automatic t-spin (final kick + t-spin mini OR t-spin = t-spin)
+                                else: 
+                                    moves.append((cur_x, cur_y, cur_r, pk, T_spin)) # NO t-spin
+                            elif(last_move == 'R'): 
+                                T_spin = self.check_t_spin(board, cur_x, cur_y, cur_r, pk)
+                                moves.append((cur_x, cur_y, cur_r, pk, T_spin))
+                            else: 
+                                moves.append((cur_x, cur_y, cur_r, pk, 0)) # NO T-spin (last move wasn't a rotation)
+                        else: 
+                            # for normal pieces (no T-spins)
+                            moves.append((cur_x, cur_y, cur_r, pk, 0)) # final move found (cuz it can't move down no more :skull:)
+            
+            rot_directions = [-1, 1] # CCW and CW
+            
+            for dr in rot_directions: 
+                new_r = (cur_r + dr) % 4
+                
+                kicks = SRS_TABLE[pk][cur_r][new_r]
+                
+                for i, kick in enumerate(kicks): 
+                    dx, dy = kick[0], kick[1]
+                    new_x, new_y = cur_x + dx, cur_y + dy
+                    
+                    if(self.is_valid_position(board, new_x, new_y, new_r, pk)): 
+                        if((new_x, new_y, new_r) not in visited): 
+                            if(new_x == 4 and new_y == 17 and new_r == 3): 
+                                print()
+                            visited.add((new_x, new_y, new_r))
+                            queue.append((new_x, new_y, new_r))
+                            if(i == len(kicks) - 1): 
+                                last_move_queue.append("LR") # rotation fit on LAST KICK
+                            else: 
+                                last_move_queue.append("R") # last move for this new appended placement-to-visit was a rotation
+                        break # possible rotation found OR already visited the possible kick -> end kick testing
+    
+        return moves
+    
+    
+    def is_valid_position(self, board, start_x, start_y, start_rot, piece_key): 
+        # checks if a piece fits at (target_x, target_y) coordinates
+        # returns False if it hits the wall, hits the floor, or intersects with another block
+        actual_piece = self.get_piece_shape(piece_key, start_rot)
+        
+        for y, row in enumerate(actual_piece): 
+            for x, cell in enumerate(row): 
+                if cell: 
+                    board_x = start_x + x
+                    board_y = start_y + y
+
+                    # check board boundaries
+                    if board_x < 0 or board_x >= board.width:
+                        return False
+                    if board_y >= board.height:
+                        return False
+
+                    # check overlap with other blocks
+                    if board_y >= 0:
+                        if board.board[board_y][board_x] == 1:
+                            return False
+        return True
+    
+    def check_t_spin(self, board, start_x, start_y, start_r, piece_key): 
+        # returns 0 if NO t-spin
+        # returns 1 if Mini t-spin
+        # returns 2 if T-spin
+        
+        to_check = [(0,0), (2,0), (2,2), (0,2)]
+        for rot in range(start_r): 
+            to_check.append(to_check.pop(0))
+        # first two in to_check will always be front corners, last two will always be back corners
+        
+        front_corners_occupied = 0
+        back_corners_occupied = 0
+        for i, candidate in enumerate(to_check): 
+            x, y = candidate
+            board_x = start_x + x
+            board_y = start_y + y
+            if(board_x < 0 or board_x >= board.width or board_y < 0 or board_y >= board.height): 
+                # if the corner is out of bounds, it counts as a block
+                if(i < 2): 
+                    front_corners_occupied += 1
+                else: 
+                    back_corners_occupied += 1
+            else: 
+                if(board.board[board_y][board_x] == 1): 
+                    # if the corner actually has a block
+                    if(i < 2): 
+                        front_corners_occupied += 1
+                    else: 
+                        back_corners_occupied += 1
+                    
+        if(front_corners_occupied == 2 and back_corners_occupied >= 1): 
+            return 2 # T-spin
+        elif(front_corners_occupied >= 1 and back_corners_occupied == 2): 
+            return 1 # mini T-spin
+        return 0
+                
+    
+    def get_piece_shape(self, pk, rotation): # does NOT return offsets, MUST do offsets later for rotations (for I and O pieces)
+        result = SHAPES[pk]
+        
+        # matrix clockwise rotation code found online
+        for i in range(rotation % 4): 
+            result = [list(row) for row in zip(*result[::-1])]
+            
+        return result
+  
+# T-spin debugging
+# 37 moves, 3 t-spins (2 normal, 1 mini)
+  
+# def debug(): 
+#     board = Board()
+#     board.board = [
+#         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+#         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+#         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+#         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+#         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+#         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+#         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+#         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+#         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+#         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+#         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+#         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+#         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+#         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+#         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+#         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+#         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+#         [0, 0, 0, 0, 0, 0, 1, 1, 0, 0],
+#         [0, 0, 0, 1, 0, 0, 0, 1, 1, 0],
+#         [1, 1, 1, 1, 1, 0, 1, 1, 1, 1]
+#     ]
+    
+#     scanner = MoveScanner()
+#     moves = scanner.get_all_legal_moves(board, 'T')
+#     print(len(moves))
+
+# if __name__ == "__main__": 
+#     debug()

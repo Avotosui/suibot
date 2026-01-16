@@ -1,3 +1,5 @@
+# ts is basically just all the SRS tables I didn't want to delete
+
 # -----------------------------------------OLD SRS TABLES-----------------------------------------
 # old tetris SRS table, decided to swap to modern Tetris Guideline SRS
 # SRS[piece_key][original_rotation][final_rotation]
