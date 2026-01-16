@@ -13,9 +13,9 @@ def print_board(game):
     os.system('cls' if os.name == 'nt' else 'clear')
     
     print(f"Score: {game.score}")
-    print("+" + "-" * (game.width * 2) + "+")
+    print("+" + "-" * (game.board.width * 2) + "+")
     
-    for row in game.board:
+    for row in game.board.board:
         line = "|"
         for cell in row:
             # [] = blocks, . = empty space
@@ -23,7 +23,7 @@ def print_board(game):
         line += "|"
         print(line)
         
-    print("+" + "-" * (game.width * 2) + "+")
+    print("+" + "-" * (game.board.width * 2) + "+")
 
 def main():
     # loading brain (from trainer.py)
@@ -65,14 +65,12 @@ def main():
             if not move:
                 print("AI gave up (No moves possible)")
                 break
-                
-            col, rot, swap_hold = move
             
             # stats
             total_moves += 1
             
             # executes moves
-            reward = game.step(col, rot, swap_hold)
+            reward = game.step(move)
             
             # print board + time between frames (uncomment if you want to see it actually play)
             if(not STATS_MODE): 

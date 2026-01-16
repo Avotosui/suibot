@@ -14,7 +14,7 @@ class TetrisGame:
         
         self.game_over = False
         
-        self.cur_piece_key = None
+        self.current_piece_key = None
         self.held_piece_key = None
         
         self.board = Board()
@@ -30,10 +30,6 @@ class TetrisGame:
         
         # unpack move data
         x, y, r, piece_key, T_spin = move_tuple
-        
-        # temporarily save previous move data
-        previous_difficulty = self.previous_difficulty
-        previous_base_points = self.previous_base_points
         
         # place piece onto board
         self.board.lock_piece(x, y, r, piece_key)
@@ -122,6 +118,13 @@ class TetrisGame:
         # take a random piece out of the bag
         self.current_piece_key = self.bag.pop(0)
         
+        if(self.current_piece_key == 'I'): 
+            if(not is_valid_position(self.board, I_PIECE_SPAWN_POSITION_X, I_PIECE_SPAWN_POSITION_Y, 0, self.current_piece_key)): 
+                self.game_over = True
+        elif(self.current_piece_key is not None): 
+            if(not is_valid_position(self.board, NORMAL_SPAWN_POSITION_X, NORMAL_SPAWN_POSITION_Y, 0, self.current_piece_key)): 
+                self.game_over = True
+        
     def hold_piece(self): 
         temp_pk = self.current_piece_key
         if(self.held_piece_key is None): # first time taking a piece out
@@ -135,6 +138,13 @@ class TetrisGame:
     def get_piece_preview(self): 
         return self.bag[:PIECE_PREVIEW_AMOUNT]
     
+    def return_board_state(self, move_tuple): 
+        x, y, r, pk, T_spin = move_tuple
+        self.board.lock_piece(x, y, r, pk)
+        result = [row[:] for row in self.board.board]
+        self.board.unlock_piece(x, y, r, pk)
+        return result
+    
     
 
 class Board: 
@@ -144,16 +154,20 @@ class Board:
         self.board = [[0] * width for _ in range(height)]
         
     def lock_piece(self, x, y, rotation, piece_key): 
-        actual_piece = SHAPES[piece_key]
-        
-        # matrix clockwise rotation code found online
-        for i in range(rotation % 4): 
-            actual_piece = [list(row) for row in zip(*actual_piece[::-1])]
+        actual_piece = get_piece_shape(piece_key, rotation)
         
         for r, row in enumerate(actual_piece): 
             for c, val in enumerate(row): 
                 if val:
                     self.board[y + r][x + c] = 1
+                    
+    def unlock_piece(self, x, y, rotation, piece_key): 
+        actual_piece = get_piece_shape(piece_key, rotation)
+        
+        for r, row in enumerate(actual_piece): 
+            for c, val in enumerate(row): 
+                if val:
+                    self.board[y + r][x + c] = 0
                     
     def clear_lines(self): 
         # clears all rows of only 1s
@@ -170,7 +184,9 @@ class Board:
 
 
 class MoveScanner: 
-    def get_all_legal_moves(self, board, pk): 
+    def get_all_legal_moves(self, game): 
+        board = game.board
+        pk = game.current_piece_key
         moves = []
         
         start_x = NORMAL_SPAWN_POSITION_X
@@ -204,7 +220,7 @@ class MoveScanner:
                 new_x, new_y, new_r = cur_x + dx, cur_y + dy, cur_r + dr
                 
                 if((new_x, new_y, new_r) not in visited): 
-                    if(self.is_valid_position(board, new_x, new_y, new_r, pk)): 
+                    if(is_valid_position(board, new_x, new_y, new_r, pk)): 
                         visited.add((new_x, new_y, new_r))
                         queue.append((new_x, new_y, new_r))
                         if(dx == 0 and dy == 1): 
@@ -239,7 +255,7 @@ class MoveScanner:
                     dx, dy = kick[0], kick[1]
                     new_x, new_y = cur_x + dx, cur_y + dy
                     
-                    if(self.is_valid_position(board, new_x, new_y, new_r, pk)): 
+                    if(is_valid_position(board, new_x, new_y, new_r, pk)): 
                         if((new_x, new_y, new_r) not in visited): 
                             if(new_x == 4 and new_y == 17 and new_r == 3): 
                                 print()
@@ -250,32 +266,9 @@ class MoveScanner:
                             else: 
                                 last_move_queue.append("R") # last move for this new appended placement-to-visit was a rotation
                         break # possible rotation found OR already visited the possible kick -> end kick testing
-    
+        
         return moves
     
-    
-    def is_valid_position(self, board, start_x, start_y, start_rot, piece_key): 
-        # checks if a piece fits at (target_x, target_y) coordinates
-        # returns False if it hits the wall, hits the floor, or intersects with another block
-        actual_piece = self.get_piece_shape(piece_key, start_rot)
-        
-        for y, row in enumerate(actual_piece): 
-            for x, cell in enumerate(row): 
-                if cell: 
-                    board_x = start_x + x
-                    board_y = start_y + y
-
-                    # check board boundaries
-                    if board_x < 0 or board_x >= board.width:
-                        return False
-                    if board_y >= board.height:
-                        return False
-
-                    # check overlap with other blocks
-                    if board_y >= 0:
-                        if board.board[board_y][board_x] == 1:
-                            return False
-        return True
     
     def check_t_spin(self, board, start_x, start_y, start_r, piece_key): 
         # returns 0 if NO t-spin
@@ -312,16 +305,39 @@ class MoveScanner:
         elif(front_corners_occupied >= 1 and back_corners_occupied == 2): 
             return 1 # mini T-spin
         return 0
-                
     
-    def get_piece_shape(self, pk, rotation): # does NOT return offsets, MUST do offsets later for rotations (for I and O pieces)
-        result = SHAPES[pk]
+    
+def is_valid_position(board, start_x, start_y, start_rot, piece_key): 
+    # checks if a piece fits at (target_x, target_y) coordinates
+    # returns False if it hits the wall, hits the floor, or intersects with another block
+    actual_piece = get_piece_shape(piece_key, start_rot)
+    
+    for y, row in enumerate(actual_piece): 
+        for x, cell in enumerate(row): 
+            if cell: 
+                board_x = start_x + x
+                board_y = start_y + y
+
+                # check board boundaries
+                if board_x < 0 or board_x >= board.width:
+                    return False
+                if board_y >= board.height:
+                    return False
+
+                # check overlap with other blocks
+                if board_y >= 0:
+                    if board.board[board_y][board_x] == 1:
+                        return False
+    return True            
+    
+def get_piece_shape(pk, rotation): # does NOT return offsets, MUST do offsets later for rotations (for I and O pieces)
+    result = SHAPES[pk]
+    
+    # matrix clockwise rotation code found online
+    for i in range(rotation % 4): 
+        result = [list(row) for row in zip(*result[::-1])]
         
-        # matrix clockwise rotation code found online
-        for i in range(rotation % 4): 
-            result = [list(row) for row in zip(*result[::-1])]
-            
-        return result
+    return result
   
 # T-spin debugging
 # 37 moves, 3 t-spins (2 normal, 1 mini)

@@ -1,6 +1,5 @@
-from tetris_engine import TetrisGame
+from tetris_engine import TetrisGame, MoveScanner
 import random
-from collections import deque
 
 # Mutation stats
 BASE_MUTATION_RATE = 0.1
@@ -12,10 +11,6 @@ HEIGHT_PENALTY_EXPONENT = 2.5
 
 class BoardEvaluator: 
     def get_score(self, board, weights): 
-        # calculates final score based on the weighted sum of heuristics
-        # weights: a dictionary with weights like "height" or "lines"
-        
-        # Precalculate heights (assume board is standard 20 tall x 10 wide)
         width = len(board[0])
         heights = []
         for x in range(width):
@@ -131,75 +126,9 @@ class BoardEvaluator:
                 total_penalty += ((height - 5) ** exponent)
             
         return total_penalty
-            
-                
 
-# currently drop only, there's no tucking/sliding yet
-class MoveScanner: 
-    def new_scan_board_using_piece(self, game): 
-        piece = game.current_piece
-        
-        moves = []
-        queue = deque()
-        visited = [[False] * (game.width + 3) for _ in range(game.height)][4]
-        # current piece, x, y, current rotation
-        # queue.append((game.current_piece, skib, 0, 0))
-        while(queue): 
-            current_piece_position = queue.pop()
-            # L, R, CW, CCW, drop 1
-            # if drop cannot happen, then add to list of final moves
-    
-    def get_all_possible_moves(self, game): 
-        moves = []
-        
-        swapped_hold = False
-        moves.extend(self._scan_board_using_piece(game, swapped_hold)) # scan using current piece
-        
-        swapped_hold = True
-        moves.extend(self._scan_board_using_piece(game, swapped_hold)) # scan using held piece
 
-        # returns a list of all possible moves (with current and held piece)
-        return moves
-    
-    def _add_piece_to_board(self, board, piece, x, y): 
-        # helper to put the piece onto the temp board
-        for r, row in enumerate(piece): 
-            for c, val in enumerate(row): 
-                if val: 
-                    board[y + r][x + c] = 1
-                    
-    def _scan_board_using_piece(self, game, swapped_hold): 
-        piece_moves = []
-        
-        piece = game.current_piece
-        if(swapped_hold): 
-            piece = game.held_piece
-            if(piece is None): 
-                piece = game.get_piece_preview()[0]
-        
-        # loop through 4 possible rotations
-        for rotation in range(4): 
-            # rotates the base piece
-            rotated_piece = game.rotate_piece(piece, rotation)
-                
-            # -3 to allow for pieces to fit into the left side columns (matrix rotation issues)
-            for col in range(-3, game.width): 
-                # fit at top of board? 
-                if not game.is_valid_position(game.board, rotated_piece, col, 0):
-                    continue
-                
-                # find where piece lands
-                drop_y = game.get_drop_position(rotated_piece, col, rotation)
-                
-                # simulate move
-                temp_board = [row[:] for row in game.board]
-                self._add_piece_to_board(temp_board, rotated_piece, col, drop_y)
-                
-                # add move to possible moves
-                piece_moves.append((temp_board, col, rotation, swapped_hold))
-                
-        return piece_moves
-            
+
 
 class GeneticPlayer: 
     def __init__(self, weights):
@@ -209,15 +138,15 @@ class GeneticPlayer:
         
     def get_best_move(self, game):
         # use MoveScanner to get all options
-        moves = self.scanner.get_all_possible_moves(game)
+        moves = self.scanner.get_all_legal_moves(game)
         
         best_score = -float('inf')
         best_move = None
         
-        # use BoardEvaluator to score moves using self.weights
+        # use BoardEvaluator to score possible moves
         for move in moves: 
-            # get the board from the tuple
-            board_state = move[0]
+            # get board_state
+            board_state = game.return_board_state(move)
             
             # calculate score
             score = self.evaluator.get_score(board_state, self.weights)
@@ -230,8 +159,7 @@ class GeneticPlayer:
         if best_move is None: 
             return None
             
-        # return the column, rotation, and swap_hold of the best move
-        return (best_move[1], best_move[2], best_move[3])
+        return best_move
     
     def get_genome(self): 
         return self.weights
