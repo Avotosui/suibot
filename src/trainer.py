@@ -31,13 +31,13 @@ def playGame(weights):
     moves = 0
     while not tetris_game.game_over and moves < MOVES_LIMIT: 
         # get best move based on the player
-        current_move = player.get_best_move(tetris_game)
+        current_move, swap_hold = player.get_best_move(tetris_game)
         
         if not current_move: 
             break # AI gave up
         
         # make the move
-        tetris_game.step(current_move[0], current_move[1], current_move[2])
+        tetris_game.step(current_move, swap_hold)
         
         moves += 1
     

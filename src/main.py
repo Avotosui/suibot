@@ -51,33 +51,26 @@ def main():
     # play the game(s)
     for i in range(GAMES_TO_RUN): 
         game = TetrisGame()
-        # print("playing...")
         
         total_moves = 0
         start_time = datetime.datetime.now()
         
         # game loop
         while not game.game_over:
-            # ask the AI for the best move, which returns (column, rotation)
-            move = player.get_best_move(game)
-            
-            # if AI returns None, it means no moves are possible
-            if not move:
-                print("AI gave up (No moves possible)")
-                break
+            move, swap_hold = player.get_best_move(game)
             
             # stats
             total_moves += 1
             
             # executes moves
-            reward = game.step(move)
+            game.step(move, swap_hold)
             
-            # print board + time between frames (uncomment if you want to see it actually play)
+            # turn off stats mode to see it play
             if(not STATS_MODE): 
+                if(swap_hold): 
+                    print('swapped hold')
                 print_board(game)
                 time.sleep(0.5)
-            # if(swap_hold): 
-            #     print("Swapping Hold")
 
         if(STATS_MODE):
             print(f"{game.score}") 

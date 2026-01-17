@@ -1,4 +1,4 @@
-from settings import MATRIX_HEIGHT, MATRIX_WIDTH, PIECE_PREVIEW_AMOUNT, NORMAL_SPAWN_POSITION_X, NORMAL_SPAWN_POSITION_Y, I_PIECE_SPAWN_POSITION_X, I_PIECE_SPAWN_POSITION_Y, LINES_CLEARED_FOR_NEXT_LEVEL, B2B_MULTIPLIER, COMBO_BONUS, SHAPES, SRS_TABLE
+from settings import MATRIX_HEIGHT, MATRIX_WIDTH, PIECE_PREVIEW_AMOUNT, NORMAL_SPAWN_POSITION_X, NORMAL_SPAWN_POSITION_Y, I_PIECE_SPAWN_POSITION_X, I_PIECE_SPAWN_POSITION_Y, LINES_CLEARED_FOR_NEXT_LEVEL, B2B_MULTIPLIER, COMBO_BONUS, MAX_LEVEL, SHAPES, SRS_TABLE
 import random
 from collections import deque
 
@@ -23,10 +23,13 @@ class TetrisGame:
         
         self.spawn_piece() 
     
-    def step(self, move_tuple): 
+    def step(self, move_tuple, swap_hold): 
         # (x, y, r, piece_key, T-spin (if T-piece))
         # r: 0 = no rotation, 1 = 90 degrees cw, 2 = 180 degrees cw, 3 = 270 degrees cw
         # T-spin: 0 = no t-spin, 1 = t-spin mini, 2 = t-spin (normal)
+        
+        if(swap_hold): # change piece
+            self.hold_piece()
         
         # unpack move data
         x, y, r, piece_key, T_spin = move_tuple
@@ -101,7 +104,7 @@ class TetrisGame:
         
         # level calculation
         self.lines_cleared += current_lines_cleared
-        self.level = 1 + (self.lines_cleared // LINES_CLEARED_FOR_NEXT_LEVEL)
+        self.level = min(1 + (self.lines_cleared // LINES_CLEARED_FOR_NEXT_LEVEL), MAX_LEVEL)
         
         # spawn next piece
         self.spawn_piece()
@@ -184,9 +187,9 @@ class Board:
 
 
 class MoveScanner: 
-    def get_all_legal_moves(self, game): 
+    def get_all_legal_moves(self, game, piece_key): 
         board = game.board
-        pk = game.current_piece_key
+        pk = piece_key
         moves = []
         
         start_x = NORMAL_SPAWN_POSITION_X
@@ -257,8 +260,6 @@ class MoveScanner:
                     
                     if(is_valid_position(board, new_x, new_y, new_r, pk)): 
                         if((new_x, new_y, new_r) not in visited): 
-                            if(new_x == 4 and new_y == 17 and new_r == 3): 
-                                print()
                             visited.add((new_x, new_y, new_r))
                             queue.append((new_x, new_y, new_r))
                             if(i == len(kicks) - 1): 

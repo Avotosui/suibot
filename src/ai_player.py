@@ -137,11 +137,19 @@ class GeneticPlayer:
         self.evaluator = BoardEvaluator()
         
     def get_best_move(self, game):
-        # use MoveScanner to get all options
-        moves = self.scanner.get_all_legal_moves(game)
+        # use MoveScanner to get all moves
+        moves = self.scanner.get_all_legal_moves(game, game.current_piece_key)
+        
+        held_piece = game.held_piece_key
+        if(game.held_piece_key is None): 
+            held_piece = game.get_piece_preview()[0]
+        
+        extra_moves = []
+        extra_moves = self.scanner.get_all_legal_moves(game, held_piece)
         
         best_score = -float('inf')
         best_move = None
+        swap_hold = False
         
         # use BoardEvaluator to score possible moves
         for move in moves: 
@@ -156,10 +164,20 @@ class GeneticPlayer:
                 best_score = score
                 best_move = move
                 
-        if best_move is None: 
-            return None
+        for move in extra_moves: 
+            # get board_state
+            board_state = game.return_board_state(move)
             
-        return best_move
+            # calculate score
+            score = self.evaluator.get_score(board_state, self.weights)
+            
+            # track winning move
+            if score > best_score: 
+                best_score = score
+                best_move = move
+                swap_hold = True
+            
+        return best_move, swap_hold
     
     def get_genome(self): 
         return self.weights
